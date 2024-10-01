@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 import os
 from fastapi.staticfiles import StaticFiles
 from geopy.geocoders import Yandex
+from contextlib import asynccontextmanager
+from logger import logger
+from bot.init_database import init_db
+
 
 
 load_dotenv()
@@ -13,8 +17,19 @@ api_key: str = os.getenv('API_KEY')
 
 template: Jinja2Templates = Jinja2Templates(directory="app/static/templates")
 
-app: FastAPI = FastAPI(title='Карта')
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    logger.info("Fastapi приложение и Бот запущены")
+    yield
+
+
+app: FastAPI = FastAPI(title='Карта', lifespan=lifespan)
 app.mount("/app/static", StaticFiles(directory="app/static"), "static")
+
 
 @app.get('/')
 async def get_map(
