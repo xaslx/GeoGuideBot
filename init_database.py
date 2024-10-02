@@ -1,4 +1,4 @@
-from bot.database import Base, engine
+from database import Base, engine
 from bot.src.models.user import User
 from bot.src.models.establishment import Establishment
 from bot.src.models.establishment_type import EstablishmentType
