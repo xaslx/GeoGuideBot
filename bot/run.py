@@ -5,7 +5,7 @@ from logger import logger
 from bot.src.handlers.user_handlers import user_router
 import os
 from fastapi import Request, Response
-from bot.src.midleware import DbMiddleware
+from bot.src.middleware import DbMiddleware
 from database import async_session_maker
 
 
