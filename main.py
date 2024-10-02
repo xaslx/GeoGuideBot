@@ -1,21 +1,17 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI
 from dotenv import load_dotenv
 import os
 from fastapi.staticfiles import StaticFiles
-from geopy.geocoders import Yandex
 from contextlib import asynccontextmanager
 from logger import logger
-from bot.init_database import init_db
+from init_database import init_db
+from bot.run import on_startup, handle_web_hook
+from app.routers import router
 
 
 
 load_dotenv()
-geolocator: Yandex = Yandex(api_key=os.getenv('API_KEY'))
-api_key: str = os.getenv('API_KEY')
 
-template: Jinja2Templates = Jinja2Templates(directory="app/static/templates")
 
 
 
@@ -23,30 +19,13 @@ template: Jinja2Templates = Jinja2Templates(directory="app/static/templates")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await on_startup()
     logger.info("Fastapi приложение и Бот запущены")
     yield
 
 
 app: FastAPI = FastAPI(title='Карта', lifespan=lifespan)
 app.mount("/app/static", StaticFiles(directory="app/static"), "static")
+app.add_route(f"/{os.getenv('TOKEN_BOT')}", handle_web_hook, methods=["POST"])
+app.include_router(router)
 
-
-@app.get('/')
-async def get_map(
-    request: Request, 
-    latitude: float,
-    longitude: float,
-    start_address: str,
-    end_address: str
-):
-    return template.TemplateResponse(
-        request=request,
-        name='index.html',
-        context={
-            'api_key': api_key,
-            'latitude': latitude,
-            'longitude': longitude,
-            'start_address': start_address,
-            'end_address': end_address
-        }
-    )
