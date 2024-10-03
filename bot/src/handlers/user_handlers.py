@@ -3,7 +3,6 @@ from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, WebAppInfo
-from bot.src.schemas.user import UserOut
 from geopy.geocoders import Yandex
 import os
 from bot.src.repository.user_repository import UserRepository
