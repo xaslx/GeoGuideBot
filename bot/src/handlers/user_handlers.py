@@ -2,7 +2,7 @@ from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, WebAppInfo
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from geopy.geocoders import Yandex
 import os
 from bot.src.repository.user_repository import UserRepository
@@ -33,6 +33,7 @@ async def get_restaurants(message: Message):
         'вот так',
         reply_markup=ReplyKeyboardRemove()
     )
+    
     
 
 @user_router.message(Command('location'), StateFilter(default_state))
