@@ -3,10 +3,13 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.client.default import DefaultBotProperties
 from logger import logger
 from bot.src.handlers.user_handlers import user_router
+from bot.src.handlers.admin_handlers import admin_router
 import os
 from fastapi import Request, Response
 from bot.src.middleware import DbMiddleware
 from database import async_session_maker
+
+
 
 
 TOKEN_BOT: str = os.getenv('TOKEN_BOT')
@@ -26,6 +29,9 @@ async def on_startup():
     await set_webhook()
     
 
+async def on_shutdown():
+    await bot.session.close()
+
 async def handle_web_hook(request: Request):
     url: str = str(request.url)
     index: str = url.rfind("/")
@@ -43,5 +49,7 @@ async def handle_web_hook(request: Request):
 
 
 dp.include_router(user_router)
+dp.include_router(admin_router)
 dp.startup.register(on_startup)
-dp.message.middleware.register(DbMiddleware(async_session_maker))
+dp.startup.register(on_shutdown)
+dp.update.middleware.register(DbMiddleware(async_session_maker))
