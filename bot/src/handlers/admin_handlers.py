@@ -1,18 +1,13 @@
-from aiogram import Bot, F, Router
-from aiogram.filters import Command, CommandStart, StateFilter
+from aiogram import F, Router
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, WebAppInfo
-from geopy.geocoders import Yandex
-import os
-from bot.src.repository.user_repository import UserRepository
+from aiogram.types import Message, ReplyKeyboardRemove
 from bot.src.repository.establishments_repository import EstablishmentRepository
 from bot.src.handlers.admin_filter import AdminProtect
-from bot.src.utils.token import create_session_token
 from bot.src.states.establishments import AddEstablishmentState
-from bot.src.keyboards.keyboards import get_category_for_new_establishment
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from bot.src.schemas.establishment import EstablishmentSchemaIn
 
 
 
@@ -44,37 +39,22 @@ async def admins_cmd(message: Message):
 @admin_router.message(AdminProtect(), StateFilter(default_state), Command('add_establishment'))
 async def add_new_establishment(message: Message, state: FSMContext):
     await message.answer(
-        'Выберите в какую категорию добавить новое заведение',
-        reply_markup=get_category_for_new_establishment()
+        'Введите название ресторана'
     )
-    await state.set_state(AddEstablishmentState.type_id)
-
-
-
-@admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.type_id), F.text.in_(('кафе', 'ресторан')))
-async def add_establishment_category(message: Message, state: FSMContext):
-    type_id: int = 1 if message.text == 'ресторан' else 2
-    await state.update_data({'type_id': type_id})
-    await message.answer('Теперь введите название заведения', reply_markup=ReplyKeyboardRemove())
     await state.set_state(AddEstablishmentState.title)
 
-
-@admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.type_id), ~F.text.in_(('кафе', 'ресторан')))
-async def add_establishment_warning(message: Message):
-    await message.answer('Можно выбрать только "кафе" или "ресторан"')
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.title), F.text)
 async def add_title(message: Message, state: FSMContext):
     await state.update_data({'title': message.text})
     await state.set_state(AddEstablishmentState.description)
-    await message.answer('Теперь введите описание заведения')
+    await message.answer('Теперь введите описание ресторана')
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.title), ~F.text)
 async def add_title_warning(message: Message):
-    await message.answer('Отправьте название заведения')
-
+    await message.answer('Отправьте название ресторана')
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.description), F.text)
@@ -102,12 +82,15 @@ async def add_address_warning(message: Message):
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.photo_url), F.photo)
-async def add_address(message: Message, state: FSMContext, session: AsyncSession):
+async def add_photo(message: Message, state: FSMContext, session: AsyncSession):
     await state.update_data({'photo_url': message.photo[-1].file_id})
-    await message.answer_photo('Отлично, заведение добавлено!')
+    res: dict = await state.get_data()
+    new_establishment: EstablishmentSchemaIn = EstablishmentSchemaIn(**res)
+    await EstablishmentRepository.add(session=session, **new_establishment.model_dump())
+    await message.answer('Ресторан успешно добавлен')
 
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.photo_url), ~F.photo)
-async def add_address_warning(message: Message):
+async def add_photo_warning(message: Message):
     await message.answer('Отправьте фото')
