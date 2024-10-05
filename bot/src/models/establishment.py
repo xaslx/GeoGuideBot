@@ -8,6 +8,7 @@ class Establishment(Base):
     __tablename__ = 'establishments'
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
     description: Mapped[str]
     address: Mapped[str]
     type_id: Mapped[int] = mapped_column(ForeignKey('establishment_types.id'))
