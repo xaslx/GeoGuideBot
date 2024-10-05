@@ -1,7 +1,9 @@
-from bot.src.repository.sqlalchemy_repositroy import SQLAlchemyRepository
+from bot.src.repository.sqlalchemy_repository import SQLAlchemyRepository
 from bot.src.models.establishment import Establishment
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
+
+
 
 class EstablishmentRepository(SQLAlchemyRepository):
 
