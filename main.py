@@ -5,8 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from logger import logger
 from init_database import init_db
-from bot.run import on_startup, handle_web_hook
-from app.routers import router
+from bot.run import on_startup, handle_web_hook, on_shutdown
+from app.routers.router import router
 
 
 
@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     await on_startup()
     logger.info("Fastapi приложение и Бот запущены")
     yield
+    await on_shutdown()
 
 
 app: FastAPI = FastAPI(title='Карта', lifespan=lifespan)
