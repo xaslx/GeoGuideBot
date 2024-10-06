@@ -1,8 +1,9 @@
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command, StateFilter, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import Message, ReplyKeyboardRemove
+from bot.src.models.establishment import Establishment
 from bot.src.repository.establishments_repository import EstablishmentRepository
 from bot.src.handlers.admin_filter import AdminProtect
 from bot.src.states.establishments import AddEstablishmentState
@@ -105,6 +106,21 @@ async def add_photo(message: Message, state: FSMContext, session: AsyncSession):
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.photo_url), ~F.photo)
 async def add_photo_warning(message: Message):
     await message.answer('Отправьте фото')
+
+
+
+@admin_router.message(AdminProtect(), StateFilter(default_state), Command('del_establishment'))
+async def delete_establishment(message: Message, session: AsyncSession, command: CommandObject):
+    if not command.args:
+        return await message.answer('Вы не ввели ID заведения')
+    if not command.args.isdigit():
+        return await message.answer('ID должен быть цифрой')
+    establishment: Establishment = await EstablishmentRepository.find_one_or_none(session=session, id=int(command.args))
+    if not establishment:
+        return await message.answer('Заведение не найдено')
+    await EstablishmentRepository.delete(session=session, id=int(command.args))
+    await message.answer('Заведение удалено')
+
 
 
 @admin_router.message(AdminProtect(), StateFilter(default_state), Command('ahelp'))
