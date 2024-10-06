@@ -6,6 +6,7 @@ from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, Message
 from geopy.geocoders import Yandex
 import os
+from bot.src.handlers.admin_filter import AdminProtect
 from bot.src.models.establishment import Establishment
 from bot.src.repository.user_repository import UserRepository
 from bot.src.models.user import User
@@ -14,14 +15,14 @@ from bot.src.schemas.establishment import EstablishmentSchemaOut
 from bot.src.states.location import LocationState
 from bot.src.keyboards.inline_keyboards import get_pagination_keyboard, get_route, get_location_from_user
 from bot.src.repository.establishments_repository import EstablishmentRepository
-
+from logger import logger
 
 
 user_router: Router = Router()
 api_key: str = os.getenv('API_KEY')
 geolocator: Yandex = Yandex(api_key=api_key)
-token = os.getenv('TOKEN_BOT')
-
+token: str = os.getenv('TOKEN_BOT')
+admins: int = os.getenv('ADMINS_ID').split(',')
 
 
 
@@ -37,9 +38,8 @@ async def cmd_start(message: Message, session: AsyncSession):
 @user_router.message(StateFilter(default_state), Command('restaurants'))
 async def get_restaurants(message: Message, session: AsyncSession):
     current_page: int = 1
-    offset: int = (current_page - 1) * 10
 
-    res, total_count = await EstablishmentRepository.find_all_limit_offset(session=session, limit=10, offset=offset)
+    res, total_count = await EstablishmentRepository.find_all_limit_offset(session=session, limit=10)
     establishments: list[EstablishmentSchemaOut] = [EstablishmentSchemaOut.model_validate(est) for est in res]
 
     total_pages: int = (total_count - 1) // 10 + 1
@@ -127,3 +127,17 @@ async def get_location(message: Message, session: AsyncSession, state: FSMContex
 async def get_location_warning(message: Message):
     await message.answer('Вы должны отправить вашу геопозицию.')
 
+
+@user_router.message(StateFilter(default_state), Command('help'))
+async def cmd_help(message: Message):
+    text: str = 'Все команды:\n/start\n/restaurants\n'
+    if str(message.from_user.id) not in admins:
+        return await message.answer(text)
+    return await message.answer(f'{text}/ahelp - для администрации')
+    
+
+@user_router.message(StateFilter(default_state))
+async def echo(message: Message):
+    await message.answer(
+            'Неизвестная команда\nВведите /help - чтобы посмотреть доступные команды'
+    )

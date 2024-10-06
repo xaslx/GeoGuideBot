@@ -30,16 +30,13 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
     await state.clear()
 
 
-@admin_router.message(AdminProtect(), StateFilter(default_state), Command('apanel'))
-async def admins_cmd(message: Message):
-    await message.answer('Команды для администрации')
-
 
 
 @admin_router.message(AdminProtect(), StateFilter(default_state), Command('add_establishment'))
 async def add_new_establishment(message: Message, state: FSMContext):
     await message.answer(
-        'Введите название ресторана'
+        'Введите название ресторана\n'
+        'Или команду /cancel - чтобы отменить'
     )
     await state.set_state(AddEstablishmentState.title)
 
@@ -49,31 +46,44 @@ async def add_new_establishment(message: Message, state: FSMContext):
 async def add_title(message: Message, state: FSMContext):
     await state.update_data({'title': message.text})
     await state.set_state(AddEstablishmentState.description)
-    await message.answer('Теперь введите описание ресторана')
+    await message.answer(
+        'Теперь введите описание ресторана\n'
+        'Или команду /cancel - чтобы отменить'
+    )
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.title), ~F.text)
 async def add_title_warning(message: Message):
-    await message.answer('Отправьте название ресторана')
+    await message.answer(
+        'Отправьте название ресторана\n'
+    )
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.description), F.text)
 async def add_description(message: Message, state: FSMContext):
     await state.update_data({'description': message.text})
     await state.set_state(AddEstablishmentState.address)
-    await message.answer('Теперь введите адрес')
+    await message.answer(
+        'Теперь введите адрес\n'
+        'Или команду /cancel - чтобы отменить'
+    )
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.description), ~F.text)
 async def add_description_warning(message: Message):
-    await message.answer('Введите описание')
+    await message.answer(
+        'Введите описание\n'
+    )
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.address), F.text)
 async def add_address(message: Message, state: FSMContext):
     await state.update_data({'address': message.text})
     await state.set_state(AddEstablishmentState.photo_url)
-    await message.answer('Теперь добавьте фото')
+    await message.answer(
+        'Теперь добавьте фото\n'
+        'Или команду /cancel - чтобы отменить'
+    )
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.address), ~F.text)
@@ -88,9 +98,19 @@ async def add_photo(message: Message, state: FSMContext, session: AsyncSession):
     new_establishment: EstablishmentSchemaIn = EstablishmentSchemaIn(**res)
     await EstablishmentRepository.add(session=session, **new_establishment.model_dump())
     await message.answer('Ресторан успешно добавлен')
+    await state.clear()
 
 
 
 @admin_router.message(AdminProtect(), StateFilter(AddEstablishmentState.photo_url), ~F.photo)
 async def add_photo_warning(message: Message):
     await message.answer('Отправьте фото')
+
+
+@admin_router.message(AdminProtect(), StateFilter(default_state), Command('ahelp'))
+async def admins_cmd(message: Message):
+    await message.answer(
+        'Команды для администрации:\n'
+        '/add_establishment - добавить новый ресторан\n'
+        '/del_establishment - удалить ресторан'
+    )
