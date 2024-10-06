@@ -15,7 +15,6 @@ from bot.src.schemas.establishment import EstablishmentSchemaOut
 from bot.src.states.location import LocationState
 from bot.src.keyboards.inline_keyboards import get_pagination_keyboard, get_route, get_location_from_user
 from bot.src.repository.establishments_repository import EstablishmentRepository
-from logger import logger
 
 
 user_router: Router = Router()
@@ -84,10 +83,10 @@ async def get_establishment(callback: CallbackQuery, session: AsyncSession):
     await callback.message.answer_photo(
         photo=establisment.photo_url,
         caption=
-        f'<b>ID: {establisment_out.id}</b>'
-        f'<b>{establisment_out.title}</b>\n\n'
+        f'<b>ID: {establisment_out.id}</b>\n\n'
+        f'Название: <b>{establisment_out.title}</b>\n\n'
         f'<b>{establisment_out.description}</b>\n\n'
-        f'<b>{establisment_out.address}</b>',
+        f'Адрес: <b>{establisment_out.address}</b>',
         reply_markup=get_location_from_user(rest_id=establisment.id)
     )
 
@@ -102,7 +101,7 @@ async def get_establishment(callback: CallbackQuery, session: AsyncSession):
 async def cmd_location(callback: CallbackQuery, state: FSMContext):
     rest_id: str = callback.data.split('_')[1]
     await callback.answer()
-    await callback.message.answer('Отправьте свою геопозицю, чтобы построить маршрут до ресторана')
+    await callback.message.answer('Отправьте свою геопозицю, чтобы построить маршрут до ресторана\nИли /cancel - чтобы отменить')
     await state.set_state(LocationState.location)
     await state.update_data({'rest_id': rest_id})
     
@@ -125,7 +124,7 @@ async def get_location(message: Message, session: AsyncSession, state: FSMContex
 
 @user_router.message(StateFilter(LocationState.location), ~F.location)
 async def get_location_warning(message: Message):
-    await message.answer('Вы должны отправить вашу геопозицию.')
+    await message.answer('Вы должны отправить вашу геопозицию.\nИли /cancel - чтобы отменить')
 
 
 @user_router.message(StateFilter(default_state), Command('help'))

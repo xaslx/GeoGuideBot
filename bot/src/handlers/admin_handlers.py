@@ -2,7 +2,7 @@ from aiogram import F, Router
 from aiogram.filters import Command, StateFilter, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message
 from bot.src.models.establishment import Establishment
 from bot.src.repository.establishments_repository import EstablishmentRepository
 from bot.src.handlers.admin_filter import AdminProtect
@@ -16,17 +16,17 @@ admin_router: Router = Router()
 
 
 
-@admin_router.message(AdminProtect(), Command(commands="cancel"), StateFilter(default_state))
+@admin_router.message(AdminProtect(), Command(commands='cancel'), StateFilter(default_state))
 async def process_cancel_command(message: Message):
-    await message.answer(text="Отменять нечего.\n\n" "Отправьте команду /add_establishment")
+    await message.answer(text='Отменять нечего.\n\n" "Отправьте команду /add_establishment')
 
 
-@admin_router.message(AdminProtect(), Command(commands="cancel"), ~StateFilter(default_state))
+@admin_router.message(AdminProtect(), Command(commands='cancel'), ~StateFilter(default_state))
 async def process_cancel_command_state(message: Message, state: FSMContext):
     await message.answer(
-        text="Вы отменили добавление нового заведения\n\n"
-        "Чтобы снова перейти к добавлению - "
-        "отправьте команду /add_establishment"
+        text='Вы отменили добавление нового заведения\n\n'
+        'Чтобы снова перейти к добавлению - '
+        'отправьте команду /add_establishment'
     )
     await state.clear()
 
@@ -97,9 +97,11 @@ async def add_photo(message: Message, state: FSMContext, session: AsyncSession):
     await state.update_data({'photo_url': message.photo[-1].file_id})
     res: dict = await state.get_data()
     new_establishment: EstablishmentSchemaIn = EstablishmentSchemaIn(**res)
-    await EstablishmentRepository.add(session=session, **new_establishment.model_dump())
-    await message.answer('Ресторан успешно добавлен')
+    establishment: Establishment = await EstablishmentRepository.add(session=session, **new_establishment.model_dump())
     await state.clear()
+    if establishment:
+        return await message.answer('Ресторан успешно добавлен')
+    return await message.answer('Не удалось добавить ресторан')
 
 
 
