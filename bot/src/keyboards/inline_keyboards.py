@@ -1,7 +1,7 @@
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.src.shemas.establishment import EstablishmentSchemaOut
+from bot.src.schemas.establishment import EstablishmentSchemaOut
 
 
 def get_pagination_keyboard(establishments: list[EstablishmentSchemaOut], current_page: int, total_pages: int) -> InlineKeyboardBuilder:
@@ -26,4 +26,25 @@ def get_pagination_keyboard(establishments: list[EstablishmentSchemaOut], curren
     return kb_builder.as_markup()
 
 
+def get_location_from_user(rest_id: int) -> InlineKeyboardMarkup:
+    inline_kb: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='Построить маршрут', callback_data=f'route_{rest_id}')
+            ]
+        ]
+    )
+    return inline_kb
 
+
+def get_route(latitude: float, longitude: float, address_from_user: str, address: str) -> InlineKeyboardMarkup:
+    inline_kb: InlineKeyboardMarkup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='Маршрут построен', 
+                    web_app=WebAppInfo(url=f'https://17fe-78-85-48-141.ngrok-free.app/?latitude={latitude}&longitude={longitude}&start_address={address_from_user}&end_address={address}'))
+            ]
+        ]
+    )
+    return inline_kb
